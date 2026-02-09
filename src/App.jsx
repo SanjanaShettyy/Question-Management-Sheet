@@ -37,6 +37,9 @@ function App() {
   const [editing, setEditing] = useState({});
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState({});
+  const [activeEdit, setActiveEdit] = useState(null);
+  const [questionInput, setQuestionInput] = useState("");
+
 
 
   useEffect(() => {
@@ -387,94 +390,75 @@ function App() {
                           {/* Add Question Input */}
 <div className="flex gap-2 mb-2">
   <input
-    type="text"
-    placeholder="Add question"
-    value={inputs[`${topic.id}-${sub.id}`] || ""}
-    onChange={(e) =>
-      setInputs({
-        ...inputs,
-        [`${topic.id}-${sub.id}`]: e.target.value,
-      })
-    }
-    className="border p-2 rounded w-64"
-  />
+  type="text"
+  placeholder="Add question"
+  value={questionInput}
+  onChange={(e) => setQuestionInput(e.target.value)}
+  className="border p-2 rounded w-64"
+/>
+
   <button
-    onClick={() => {
-      const value =
-        inputs[`${topic.id}-${sub.id}`];
-      if (!value) return;
-      addQuestion(
-        topic.id,
-        sub.id,
-        value
+  onClick={() => {
+    if (!questionInput.trim()) return;
+
+    if (
+      activeEdit &&
+      activeEdit.topicId === topic.id &&
+      activeEdit.subId === sub.id
+    ) {
+      editQuestion(
+        activeEdit.topicId,
+        activeEdit.subId,
+        activeEdit.questionId,
+        questionInput
       );
-      setInputs({
-        ...inputs,
-        [`${topic.id}-${sub.id}`]: "",
-      });
-    }}
-    className="bg-purple-500 text-white px-3 py-2 rounded"
-  >
-    Add
-  </button>
+      setActiveEdit(null);
+    } else {
+      addQuestion(topic.id, sub.id, questionInput);
+    }
+
+    setQuestionInput("");
+  }}
+  className="bg-purple-500 text-white px-3 py-2 rounded"
+>
+  {activeEdit &&
+  activeEdit.topicId === topic.id &&
+  activeEdit.subId === sub.id
+    ? "Save"
+    : "Add"}
+</button>
+
 </div>
 
                           {expanded[sub.id] && (
   <>
                           {sub.questions.map((q) => (
-                            <div
-                              key={q.id}
-                              className="bg-white p-2 rounded mb-1 flex justify-between text-sm hover:bg-red-200 transition"
+  <div
+    key={q.id}
+    className="bg-white p-2 rounded mb-1 flex justify-between text-sm hover:bg-gray-50 transition cursor-pointer"
+    onClick={() => {
+      setQuestionInput(q.title);
+      setActiveEdit({
+        topicId: topic.id,
+        subId: sub.id,
+        questionId: q.id,
+      });
+    }}
+  >
+    <span>{q.title}</span>
 
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        deleteQuestion(topic.id, sub.id, q.id);
+      }}
+      className="text-red-400"
+    >
+      Delete
+    </button>
+  </div>
+))}
 
-                            >
-                              {editing[q.id] ? (
-                                <input
-                                  type="text"
-                                  defaultValue={q.title}
-                                  onBlur={(e) => {
-                                    editQuestion(
-                                      topic.id,
-                                      sub.id,
-                                      q.id,
-                                      e.target.value
-                                    );
-                                    setEditing({
-                                      ...editing,
-                                      [q.id]: false,
-                                    });
-                                  }}
-                                  autoFocus
-                                  className="border p-1 rounded text-sm"
-                                />
-                              ) : (
-                                <span
-                                  className="cursor-pointer"
-                                  onClick={() =>
-                                    setEditing({
-                                      ...editing,
-                                      [q.id]: true,
-                                    })
-                                  }
-                                >
-                                  {q.title}
-                                </span>
-                              )}
-
-                              <button
-                                onClick={() =>
-                                  deleteQuestion(
-                                    topic.id,
-                                    sub.id,
-                                    q.id
-                                  )
-                                }
-                                className="text-red-400"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          ))}
                           </>
                           )}
                         </div>
